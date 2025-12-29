@@ -15,7 +15,7 @@ namespace esphome
                 std::string custom_value = "";
 
 
-                void showPercentageMenu(M5DialDisplay& display){
+                void showPercentageMenu(M5DialDisplay& display, bool fullRedraw = true){
                     LovyanGFX* gfx = display.getGfx();
 
                     uint16_t height = gfx->height();
@@ -25,23 +25,48 @@ namespace esphome
 
                     gfx->startWrite();                      // Secure SPI bus
 
-                    // Modern dark gradient background
-                    display.clear(ModernUI::BG_DARK);
-
                     // Calculate progress for arc
                     float progress = (float)(getValue() - this->getMinValue()) / (this->getMaxValue() - this->getMinValue());
                     float valOnArc = (getMaxValue()==0?240:(progress * 240)) + 150;
 
+                    if(fullRedraw) {
+                        // Full redraw - draw everything
+                        display.clear(ModernUI::BG_DARK);
+
+                        // Draw center circle with gradient (only on full redraw)
+                        display.drawCircularGradient(width/2, height/2, 95,
+                                                    ModernUI::BG_ELEVATED, ModernUI::BG_DARK);
+                        gfx->fillCircle(width/2, height/2, 95, ModernUI::BG_ELEVATED);
+
+                        // Icon with subtle shadow (only on full redraw)
+                        if(this->icon != nullptr){
+                            display.drawBitmapTransparent(this->icon, width/2-33, height/2-28, 70, 70, 0xFFFF);
+                            display.drawBitmapTransparent(this->icon, width/2-35, height/2-30, 70, 70, 0xFFFF);
+                        }
+
+                        // Label with secondary text color (only on full redraw)
+                        display.setFontsize(1.1);
+                        gfx->setTextColor(ModernUI::TEXT_SECONDARY);
+                        gfx->drawString(this->label.c_str(), width / 2, height / 2 - 42);
+                    } else {
+                        // Quick refresh - only update dynamic elements
+                        // Clear text area for value
+                        gfx->fillRect(width/2 - 60, height/2 - 85, 120, 20, ModernUI::BG_DARK);
+                        // Clear device name area
+                        gfx->fillRect(width/2 - 60, height/2 + 75, 120, 15, ModernUI::BG_DARK);
+                        // Clear dots area
+                        gfx->fillRect(width/2 - 25, height/2 + 100, 50, 10, ModernUI::BG_DARK);
+                    }
+
+                    // Draw arc (always - but optimized)
                     if(this->isBarActive()){
-                        // Background arc (inactive portion) with subtle color
+                        // Background arc (inactive portion)
                         gfx->fillArc(width / 2, height / 2,
                                     ModernUI::ARC_OUTER_RADIUS, ModernUI::ARC_INNER_RADIUS,
                                     150, 390, ModernUI::PROGRESS_BG);
 
                         // Draw modern gradient progress arc
-                        uint16_t gradientStart = display.getProgressGradientColor(0);
                         uint16_t gradientEnd = display.getProgressGradientColor(progress);
-
                         display.drawGradientArc(width / 2, height / 2,
                                               ModernUI::ARC_OUTER_RADIUS,
                                               ModernUI::ARC_INNER_RADIUS,
@@ -61,36 +86,18 @@ namespace esphome
                                     150, 390, ModernUI::PROGRESS_BG);
                     }
 
-                    // Draw center circle with gradient
-                    display.drawCircularGradient(width/2, height/2, 95,
-                                                ModernUI::BG_ELEVATED, ModernUI::BG_DARK);
-                    gfx->fillCircle(width/2, height/2, 95, ModernUI::BG_ELEVATED);
-
-                    // Icon with subtle shadow
-                    if(this->icon != nullptr){
-                        // Draw icon shadow
-                        display.drawBitmapTransparent(this->icon, width/2-33, height/2-28, 70, 70, 0xFFFF);
-                        // Draw icon
-                        display.drawBitmapTransparent(this->icon, width/2-35, height/2-30, 70, 70, 0xFFFF);
-                    }
-
-                    // Value text with modern typography and shadow
+                    // Value text (always update)
                     display.setFontsize(2.2);
                     String valueText = use_custom_value ? custom_value.c_str() : (String(getValue()) + this->unit.c_str()).c_str();
                     display.drawTextWithShadow(valueText.c_str(), width / 2, height / 2 - 70, ModernUI::TEXT_PRIMARY);
 
-                    // Label with secondary text color
-                    display.setFontsize(1.1);
-                    gfx->setTextColor(ModernUI::TEXT_SECONDARY);
-                    gfx->drawString(this->label.c_str(), width / 2, height / 2 - 42);
-
-                    // Device name at bottom with accent color
+                    // Device name at bottom (always update for color change)
                     display.setFontsize(1.0);
                     uint16_t nameColor = display.getProgressGradientColor(progress);
                     gfx->setTextColor(nameColor);
                     gfx->drawString(this->device.getName().c_str(), width / 2, height / 2 + 85);
 
-                    // Add progress indicator dots at bottom
+                    // Progress indicator dots (always update)
                     int dotY = height / 2 + 105;
                     int dotSpacing = 8;
                     int numDots = 5;
@@ -146,7 +153,7 @@ namespace esphome
 
                 void refreshDisplay(M5DialDisplay& display, bool init) override {
                     ESP_LOGD("DISPLAY", "refresh Display: Percentage-Modus");
-                    showPercentageMenu(display);
+                    showPercentageMenu(display, init);  // Full redraw only on init
                 }
                 
                 bool onTouch(M5DialDisplay& display, uint16_t x, uint16_t y) override {

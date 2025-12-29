@@ -93,9 +93,10 @@ namespace esphome
 
                     gfx->startWrite();                    // Secure SPI bus
 
-                    // Draw center circle with gradient from dark to current color
-                    display.drawCircularGradient(width/2, height/2, 85,
-                                                currentColor, ModernUI::BG_DARK);
+                    // Clear only the center circle area (faster than full redraw)
+                    gfx->fillCircle(width/2, height/2, 90, ModernUI::BG_DARK);
+
+                    // Draw center circle with solid color (skip gradient for speed)
                     gfx->fillCircle(width/2, height/2, 85, currentColor);
 
                     // Add outer glow ring
@@ -149,25 +150,18 @@ namespace esphome
                     // Modern dark background
                     display.clear(ModernUI::BG_DARK);
 
-                    // Draw enhanced color wheel with multiple rings for depth
-                    // Outer ring - full saturation colors
-                    for (int i=0; i<360; i++){
+                    // Draw enhanced color wheel - optimized with fewer iterations
+                    // Draw every 2 degrees instead of every degree for speed
+                    for (int i=0; i<360; i+=2){
+                        // Main color ring
                         display.drawColorCircleLine(360-i, 95.0, 120.0, getColorByDegree(i));
-                    }
+                        display.drawColorCircleLine(360-i-1, 95.0, 120.0, getColorByDegree(i));
 
-                    // Add subtle gradient overlay for depth
-                    // Inner shadow ring
-                    for (int i=0; i<360; i++){
+                        // Inner shadow ring (darker)
                         uint32_t baseColor = getColorByDegree(i);
                         uint32_t darkerColor = display.interpolateColor(baseColor, ModernUI::BG_DARK, 0.3);
                         display.drawColorCircleLine(360-i, 90.0, 95.0, darkerColor);
-                    }
-
-                    // Outer highlight ring for modern look
-                    for (int i=0; i<360; i++){
-                        uint32_t baseColor = getColorByDegree(i);
-                        uint32_t lighterColor = display.interpolateColor(baseColor, WHITE, 0.2);
-                        display.drawColorCircleLine(360-i, 120.0, 122.0, lighterColor);
+                        display.drawColorCircleLine(360-i-1, 90.0, 95.0, darkerColor);
                     }
 
                     gfx->endWrite();                      // Release SPI bus

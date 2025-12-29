@@ -128,9 +128,10 @@ namespace esphome
 
                     gfx->startWrite();                    // Secure SPI bus
 
-                    // Draw center circle with current temperature color
-                    display.drawCircularGradient(width/2, height/2, 85,
-                                                currentColor, ModernUI::BG_DARK);
+                    // Clear only the center circle area (faster)
+                    gfx->fillCircle(width/2, height/2, 90, ModernUI::BG_DARK);
+
+                    // Draw center circle with solid color (skip gradient for speed)
                     gfx->fillCircle(width/2, height/2, 85, currentColor);
 
                     // Add warm glow effect around the center
@@ -189,27 +190,20 @@ namespace esphome
                     // Modern dark background
                     display.clear(ModernUI::BG_DARK);
 
-                    // Draw temperature gradient ring (warm to cool)
-                    // Outer ring - main temperature gradient
-                    for (int i=0; i<360; i++){
+                    // Draw temperature gradient ring - optimized with fewer iterations
+                    // Draw every 2 degrees instead of every degree for speed
+                    for (int i=0; i<360; i+=2){
                         float tmp = map(i, 0, 360, this->minValue, this->maxValue);
-                        display.drawColorCircleLine(360-i, 95.0, 120.0, colorTemperatureToRGB888(tmp));
-                    }
 
-                    // Inner shadow ring for depth
-                    for (int i=0; i<360; i++){
-                        float tmp = map(i, 0, 360, this->minValue, this->maxValue);
+                        // Main temperature ring
+                        display.drawColorCircleLine(360-i, 95.0, 120.0, colorTemperatureToRGB888(tmp));
+                        display.drawColorCircleLine(360-i-1, 95.0, 120.0, colorTemperatureToRGB888(tmp));
+
+                        // Inner shadow ring for depth
                         uint32_t baseColor = colorTemperatureToRGB888(tmp);
                         uint32_t darkerColor = display.interpolateColor(baseColor, ModernUI::BG_DARK, 0.3);
                         display.drawColorCircleLine(360-i, 90.0, 95.0, darkerColor);
-                    }
-
-                    // Outer highlight ring for modern look
-                    for (int i=0; i<360; i++){
-                        float tmp = map(i, 0, 360, this->minValue, this->maxValue);
-                        uint32_t baseColor = colorTemperatureToRGB888(tmp);
-                        uint32_t lighterColor = display.interpolateColor(baseColor, WHITE, 0.2);
-                        display.drawColorCircleLine(360-i, 120.0, 122.0, lighterColor);
+                        display.drawColorCircleLine(360-i-1, 90.0, 95.0, darkerColor);
                     }
 
                     gfx->endWrite();                      // Release SPI bus
