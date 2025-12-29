@@ -121,3 +121,67 @@
 typedef struct coord {
     float x, y;
 } COORD;
+
+#ifndef MODERN_UI_COLORS_H
+#define MODERN_UI_COLORS_H
+    // Modern Color Palette - Sophisticated and elegant
+    namespace ModernUI {
+        // Primary brand colors (vibrant gradients)
+        static const uint16_t PRIMARY_BLUE = 0x1E9F;      // #1E88E5 - Bright blue
+        static const uint16_t PRIMARY_PURPLE = 0x8019;    // #8E24AA - Royal purple
+        static const uint16_t PRIMARY_TEAL = 0x0659;      // #00BCD4 - Cyan teal
+        static const uint16_t PRIMARY_PINK = 0xF81F;      // #FF00FF - Magenta pink
+
+        // Accent colors (modern and vibrant)
+        static const uint16_t ACCENT_CORAL = 0xFB20;      // #FF6B40 - Coral
+        static const uint16_t ACCENT_LIME = 0x87F0;       // #8BC34A - Lime green
+        static const uint16_t ACCENT_AMBER = 0xFD20;      // #FFA000 - Amber
+        static const uint16_t ACCENT_ROSE = 0xF99E;       // #F48FB1 - Rose
+
+        // Background colors (dark theme)
+        static const uint16_t BG_DARK = 0x1082;           // #121212 - Almost black
+        static const uint16_t BG_DARKER = 0x0000;         // #000000 - Pure black
+        static const uint16_t BG_CARD = 0x2104;           // #212121 - Card background
+        static const uint16_t BG_ELEVATED = 0x3186;       // #303030 - Elevated surface
+
+        // Text colors (high contrast)
+        static const uint16_t TEXT_PRIMARY = 0xFFFF;      // #FFFFFF - White
+        static const uint16_t TEXT_SECONDARY = 0xBDF7;    // #B0B0B0 - Light gray
+        static const uint16_t TEXT_DISABLED = 0x7BEF;     // #707070 - Disabled gray
+        static const uint16_t TEXT_ON_COLOR = 0xFFFF;     // #FFFFFF - Text on colored bg
+
+        // Semantic colors (status indicators)
+        static const uint16_t SUCCESS = 0x07E0;           // #00FF00 - Success green
+        static const uint16_t WARNING = 0xFD20;           // #FFA000 - Warning amber
+        static const uint16_t ERROR = 0xF800;             // #FF0000 - Error red
+        static const uint16_t INFO = 0x1E9F;              // #1E88E5 - Info blue
+
+        // Progress bar colors (gradient-ready)
+        static const uint16_t PROGRESS_START = 0x1E9F;    // #1E88E5 - Blue start
+        static const uint16_t PROGRESS_MID = 0x8019;      // #8E24AA - Purple mid
+        static const uint16_t PROGRESS_END = 0xF81F;      // #FF00FF - Magenta end
+        static const uint16_t PROGRESS_BG = 0x2965;       // #252525 - Progress background
+
+        // Special effects
+        static const uint16_t GLOW = 0x051F;              // Subtle glow effect
+        static const uint16_t SHADOW = 0x0841;            // Shadow overlay
+
+        // UI spacing constants
+        static const int SPACING_XS = 4;
+        static const int SPACING_SM = 8;
+        static const int SPACING_MD = 12;
+        static const int SPACING_LG = 16;
+        static const int SPACING_XL = 24;
+
+        // Arc/Ring dimensions
+        static const int ARC_OUTER_RADIUS = 118;
+        static const int ARC_INNER_RADIUS = 102;
+        static const int ARC_THICKNESS = 16;
+        static const int ARC_START_ANGLE = 150;
+        static const int ARC_END_ANGLE = 390;
+
+        // Animation constants
+        static const int TRANSITION_SPEED = 50;  // ms for smooth transitions
+        static const float EASE_FACTOR = 0.2;    // Easing interpolation
+    }
+#endif

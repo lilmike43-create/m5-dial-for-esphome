@@ -83,31 +83,56 @@ namespace esphome
                     LovyanGFX* gfx = display.getGfx();
 
                     int currentValue = getValue();
+                    uint32_t currentColor = getColorByDegree(currentValue);
                     uint32_t complementary_color = getComplementaryByDegree(currentValue);
 
                     int height = gfx->height();
                     int width  = gfx->width();
 
-                    gfx->setTextColor(complementary_color);
                     gfx->setTextDatum(middle_center);
 
                     gfx->startWrite();                    // Secure SPI bus
-                    gfx->fillCircle(width/2, height/2, 70, getColorByDegree(currentValue));
 
-                    display.setFontsize(1);
-                    gfx->drawString(String(currentValue),
-                                    width / 2,
-                                    height / 2 - 20);
+                    // Draw center circle with gradient from dark to current color
+                    display.drawCircularGradient(width/2, height/2, 85,
+                                                currentColor, ModernUI::BG_DARK);
+                    gfx->fillCircle(width/2, height/2, 85, currentColor);
 
-                    display.setFontsize(1);
+                    // Add outer glow ring
+                    uint16_t glowColor = display.interpolateColor(currentColor, WHITE, 0.4);
+                    gfx->fillArc(width/2, height/2, 90, 85, 0, 360, glowColor);
+
+                    // Value text with shadow and complementary color for contrast
+                    display.setFontsize(1.8);
+                    display.drawTextWithShadow(String(currentValue).c_str(),
+                                              width / 2, height / 2 - 30,
+                                              complementary_color);
+
+                    // Degree symbol and label
+                    display.setFontsize(0.9);
+                    gfx->setTextColor(complementary_color);
+                    gfx->drawString("hue", width / 2, height / 2 - 8);
+
+                    // Device name
+                    display.setFontsize(1.0);
                     gfx->drawString(this->device.getName().c_str(),
-                                    width / 2,
-                                    height / 2 + 20);
-                    gfx->drawString("Color",
-                                    width / 2,
-                                    height / 2 + 50);  
+                                   width / 2, height / 2 + 20);
 
-                    display.drawColorCircleLine(360-currentValue, 40, 69, complementary_color);
+                    // Color mode label
+                    display.setFontsize(0.85);
+                    uint16_t labelColor = display.interpolateColor(complementary_color,
+                                                                   ModernUI::TEXT_SECONDARY, 0.3);
+                    gfx->setTextColor(labelColor);
+                    gfx->drawString("RGB Color", width / 2, height / 2 + 45);
+
+                    // Draw enhanced selector with glow
+                    // Outer glow
+                    display.drawColorCircleLine(360-currentValue, 35, 83, glowColor);
+                    // Main indicator
+                    display.drawColorCircleLine(360-currentValue, 38, 80, complementary_color);
+                    // Inner highlight
+                    display.drawColorCircleLine(360-currentValue, 40, 77, WHITE);
+
                     gfx->endWrite();                      // Release SPI bus
                 }
 
@@ -115,17 +140,34 @@ namespace esphome
                     LovyanGFX* gfx = display.getGfx();
 
                     int currentValue = getValue();
-                    uint32_t complementary_color = getComplementaryByDegree(currentValue);
 
                     int height = gfx->height();
                     int width  = gfx->width();
 
                     gfx->startWrite();                      // Secure SPI bus
 
-                    display.clear(BLACK);
+                    // Modern dark background
+                    display.clear(ModernUI::BG_DARK);
 
+                    // Draw enhanced color wheel with multiple rings for depth
+                    // Outer ring - full saturation colors
                     for (int i=0; i<360; i++){
-                        display.drawColorCircleLine(360-i, 70.0, 130.0, getColorByDegree(i));
+                        display.drawColorCircleLine(360-i, 95.0, 120.0, getColorByDegree(i));
+                    }
+
+                    // Add subtle gradient overlay for depth
+                    // Inner shadow ring
+                    for (int i=0; i<360; i++){
+                        uint32_t baseColor = getColorByDegree(i);
+                        uint32_t darkerColor = display.interpolateColor(baseColor, ModernUI::BG_DARK, 0.3);
+                        display.drawColorCircleLine(360-i, 90.0, 95.0, darkerColor);
+                    }
+
+                    // Outer highlight ring for modern look
+                    for (int i=0; i<360; i++){
+                        uint32_t baseColor = getColorByDegree(i);
+                        uint32_t lighterColor = display.interpolateColor(baseColor, WHITE, 0.2);
+                        display.drawColorCircleLine(360-i, 120.0, 122.0, lighterColor);
                     }
 
                     gfx->endWrite();                      // Release SPI bus

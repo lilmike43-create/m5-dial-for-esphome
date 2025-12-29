@@ -119,32 +119,60 @@ namespace esphome
                     LovyanGFX* gfx = display.getGfx();
 
                     int currentValue = getValue();
-                    uint32_t complementary_color = M5Dial.Display.color888(255,0,0);
+                    uint16_t currentColor = colorTemperatureToRGB(currentValue);
 
                     int height = gfx->height();
                     int width  = gfx->width();
 
-                    gfx->setTextColor(complementary_color);
                     gfx->setTextDatum(middle_center);
 
                     gfx->startWrite();                    // Secure SPI bus
-                    gfx->fillCircle(width/2, height/2, 70, colorTemperatureToRGB(currentValue));
 
-                    display.setFontsize(1);
-                    gfx->drawString(String(currentValue),
-                                    width / 2,
-                                    height / 2 - 20);
+                    // Draw center circle with current temperature color
+                    display.drawCircularGradient(width/2, height/2, 85,
+                                                currentColor, ModernUI::BG_DARK);
+                    gfx->fillCircle(width/2, height/2, 85, currentColor);
 
-                    display.setFontsize(1);
+                    // Add warm glow effect around the center
+                    uint16_t glowColor = display.interpolateColor(currentColor, WHITE, 0.5);
+                    gfx->fillArc(width/2, height/2, 90, 85, 0, 360, glowColor);
+
+                    // Temperature value with shadow
+                    display.setFontsize(2.0);
+                    String tempText = String(currentValue) + "K";
+                    display.drawTextWithShadow(tempText.c_str(),
+                                              width / 2, height / 2 - 35,
+                                              ModernUI::TEXT_PRIMARY);
+
+                    // Temperature label
+                    display.setFontsize(0.9);
+                    gfx->setTextColor(ModernUI::TEXT_SECONDARY);
+
+                    // Show warm/cool indicator
+                    const char* tempLabel = (currentValue < 4000) ? "warm" : "cool";
+                    gfx->drawString(tempLabel, width / 2, height / 2 - 10);
+
+                    // Device name
+                    display.setFontsize(1.0);
+                    gfx->setTextColor(ModernUI::TEXT_PRIMARY);
                     gfx->drawString(this->device.getName().c_str(),
-                                    width / 2,
-                                    height / 2 + 20);
-                    gfx->drawString("White",
-                                    width / 2,
-                                    height / 2 + 50);  
+                                   width / 2, height / 2 + 20);
 
+                    // Mode label
+                    display.setFontsize(0.85);
+                    gfx->setTextColor(ModernUI::TEXT_SECONDARY);
+                    gfx->drawString("Color Temp", width / 2, height / 2 + 45);
+
+                    // Draw enhanced position indicator
                     float temp = map(currentValue, this->minValue, this->maxValue, 360, 0);
-                    display.drawColorCircleLine(temp, 40, 69, complementary_color);
+
+                    // Outer glow
+                    display.drawColorCircleLine(temp, 35, 83, glowColor);
+                    // Main indicator (use current temperature color)
+                    display.drawColorCircleLine(temp, 38, 80, currentColor);
+                    // Inner highlight
+                    display.drawColorCircleLine(temp, 40, 77, WHITE);
+
                     gfx->endWrite();                      // Release SPI bus
                 }
 
@@ -158,11 +186,30 @@ namespace esphome
 
                     gfx->startWrite();                      // Secure SPI bus
 
-                    display.clear(BLACK);
+                    // Modern dark background
+                    display.clear(ModernUI::BG_DARK);
 
+                    // Draw temperature gradient ring (warm to cool)
+                    // Outer ring - main temperature gradient
                     for (int i=0; i<360; i++){
                         float tmp = map(i, 0, 360, this->minValue, this->maxValue);
-                        display.drawColorCircleLine(360-i, 70.0, 130.0, colorTemperatureToRGB888(tmp));
+                        display.drawColorCircleLine(360-i, 95.0, 120.0, colorTemperatureToRGB888(tmp));
+                    }
+
+                    // Inner shadow ring for depth
+                    for (int i=0; i<360; i++){
+                        float tmp = map(i, 0, 360, this->minValue, this->maxValue);
+                        uint32_t baseColor = colorTemperatureToRGB888(tmp);
+                        uint32_t darkerColor = display.interpolateColor(baseColor, ModernUI::BG_DARK, 0.3);
+                        display.drawColorCircleLine(360-i, 90.0, 95.0, darkerColor);
+                    }
+
+                    // Outer highlight ring for modern look
+                    for (int i=0; i<360; i++){
+                        float tmp = map(i, 0, 360, this->minValue, this->maxValue);
+                        uint32_t baseColor = colorTemperatureToRGB888(tmp);
+                        uint32_t lighterColor = display.interpolateColor(baseColor, WHITE, 0.2);
+                        display.drawColorCircleLine(360-i, 120.0, 122.0, lighterColor);
                     }
 
                     gfx->endWrite();                      // Release SPI bus

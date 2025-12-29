@@ -21,68 +21,88 @@ namespace esphome
                     uint16_t height = gfx->height();
                     uint16_t width  = gfx->width();
 
-                    gfx->setTextColor(MAROON);
                     gfx->setTextDatum(middle_center);
 
                     gfx->startWrite();                      // Secure SPI bus
 
-                    display.clear();
+                    // Modern dark gradient background
+                    display.clear(ModernUI::BG_DARK);
 
-                    float valOnArc = (getMaxValue()==0?240:((float)240 / (this->getMaxValue() - this->getMinValue())) * (getValue() - this->getMinValue())) + 150;
+                    // Calculate progress for arc
+                    float progress = (float)(getValue() - this->getMinValue()) / (this->getMaxValue() - this->getMinValue());
+                    float valOnArc = (getMaxValue()==0?240:(progress * 240)) + 150;
 
                     if(this->isBarActive()){
-                        // Round %-Bar
-                        gfx->fillArc(width / 2,
-                                    height / 2,
-                                    115,
-                                    100,
-                                    150,
-                                    valOnArc,
-                                    RED
-                                    );
+                        // Background arc (inactive portion) with subtle color
+                        gfx->fillArc(width / 2, height / 2,
+                                    ModernUI::ARC_OUTER_RADIUS, ModernUI::ARC_INNER_RADIUS,
+                                    150, 390, ModernUI::PROGRESS_BG);
 
-                        gfx->fillArc(width / 2,
-                                    height / 2,
-                                    115,
-                                    100,
-                                    valOnArc,
-                                    390,
-                                    ORANGE
-                                    );
+                        // Draw modern gradient progress arc
+                        uint16_t gradientStart = display.getProgressGradientColor(0);
+                        uint16_t gradientEnd = display.getProgressGradientColor(progress);
+
+                        display.drawGradientArc(width / 2, height / 2,
+                                              ModernUI::ARC_OUTER_RADIUS,
+                                              ModernUI::ARC_INNER_RADIUS,
+                                              150, valOnArc,
+                                              ModernUI::PROGRESS_START, gradientEnd);
+
+                        // Add subtle glow to active portion
+                        uint16_t glowColor = display.interpolateColor(gradientEnd, WHITE, 0.3);
+                        gfx->fillArc(width / 2, height / 2,
+                                    ModernUI::ARC_OUTER_RADIUS + 2,
+                                    ModernUI::ARC_OUTER_RADIUS,
+                                    150, valOnArc, glowColor);
                     } else {
-                        gfx->fillArc(width / 2,
-                                    height / 2,
-                                    115,
-                                    100,
-                                    150,
-                                    390,
-                                    display.getBackgroundColor()
-                                    );
+                        gfx->fillArc(width / 2, height / 2,
+                                    ModernUI::ARC_OUTER_RADIUS,
+                                    ModernUI::ARC_INNER_RADIUS,
+                                    150, 390, ModernUI::PROGRESS_BG);
                     }
 
-                    // Percent
-                    display.setFontsize(1.7);
-                    gfx->drawString(use_custom_value ? custom_value.c_str() : (String(getValue()) + this->unit.c_str()).c_str(),
-                                    width / 2,
-                                    height / 2 - 70);
+                    // Draw center circle with gradient
+                    display.drawCircularGradient(width/2, height/2, 95,
+                                                ModernUI::BG_ELEVATED, ModernUI::BG_DARK);
+                    gfx->fillCircle(width/2, height/2, 95, ModernUI::BG_ELEVATED);
 
-                    // Mode
-                    display.setFontsize(1);
-                    gfx->drawString(this->label.c_str(),
-                                    width / 2,
-                                    height / 2 - 40);  
-
-                    // Icon
+                    // Icon with subtle shadow
                     if(this->icon != nullptr){
+                        // Draw icon shadow
+                        display.drawBitmapTransparent(this->icon, width/2-33, height/2-28, 70, 70, 0xFFFF);
+                        // Draw icon
                         display.drawBitmapTransparent(this->icon, width/2-35, height/2-30, 70, 70, 0xFFFF);
                     }
 
-                    // Device Name
-                    display.setFontsize(1);
-                    gfx->drawString(this->device.getName().c_str(),
-                                    width / 2,
-                                    height / 2 + 90);
- 
+                    // Value text with modern typography and shadow
+                    display.setFontsize(2.2);
+                    String valueText = use_custom_value ? custom_value.c_str() : (String(getValue()) + this->unit.c_str()).c_str();
+                    display.drawTextWithShadow(valueText.c_str(), width / 2, height / 2 - 70, ModernUI::TEXT_PRIMARY);
+
+                    // Label with secondary text color
+                    display.setFontsize(1.1);
+                    gfx->setTextColor(ModernUI::TEXT_SECONDARY);
+                    gfx->drawString(this->label.c_str(), width / 2, height / 2 - 42);
+
+                    // Device name at bottom with accent color
+                    display.setFontsize(1.0);
+                    uint16_t nameColor = display.getProgressGradientColor(progress);
+                    gfx->setTextColor(nameColor);
+                    gfx->drawString(this->device.getName().c_str(), width / 2, height / 2 + 85);
+
+                    // Add progress indicator dots at bottom
+                    int dotY = height / 2 + 105;
+                    int dotSpacing = 8;
+                    int numDots = 5;
+                    int startX = width / 2 - (numDots - 1) * dotSpacing / 2;
+
+                    for(int i = 0; i < numDots; i++){
+                        float dotProgress = (float)i / (numDots - 1);
+                        uint16_t dotColor = (progress >= dotProgress) ?
+                            display.getProgressGradientColor(dotProgress) :
+                            ModernUI::PROGRESS_BG;
+                        gfx->fillCircle(startX + i * dotSpacing, dotY, 2, dotColor);
+                    }
 
                     gfx->endWrite();                      // Release SPI bus
                 }

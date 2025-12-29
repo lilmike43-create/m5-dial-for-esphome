@@ -141,18 +141,24 @@ namespace esphome
                     uint16_t height = this->getHeight();
                     uint16_t width  = this->getWidth();
 
-                    gfx->setTextColor(LIGHTGREY);
                     gfx->setTextDatum(middle_center);
-
                     this->setFontByName(this->fontName);
 
                     gfx->startWrite();                      // Secure SPI bus
-                    this->clear(DARKGREY);
-                    
+
+                    // Modern gradient background
+                    this->clear(ModernUI::BG_DARK);
+
+                    // Draw circular gradient background
+                    this->drawCircularGradient(width/2, height/2, 100,
+                                              ModernUI::BG_CARD, ModernUI::BG_DARK);
+
+                    // Draw status text with shadow
                     this->setFontsize(2);
-                    gfx->drawString("OFFLINE",
-                                    width / 2,
-                                    height / 2);
+                    this->drawTextWithShadow("OFFLINE", width / 2, height / 2, ModernUI::TEXT_DISABLED);
+
+                    // Draw subtle status indicator ring
+                    gfx->fillArc(width/2, height/2, 118, 114, 0, 360, ModernUI::TEXT_DISABLED);
 
                     gfx->endWrite();                      // Release SPI bus
                     this->resetScreensaverRunning();
@@ -162,18 +168,25 @@ namespace esphome
                     uint16_t height = this->getHeight();
                     uint16_t width  = this->getWidth();
 
-                    gfx->setTextColor(WHITE);
                     gfx->setTextDatum(middle_center);
-
                     this->setFontByName(this->fontName);
 
                     gfx->startWrite();                      // Secure SPI bus
-                    this->clear(BLUE);
-                    
+
+                    // Modern gradient background
+                    this->clear(ModernUI::BG_DARK);
+
+                    // Draw pulsing gradient circle
+                    this->drawCircularGradient(width/2, height/2, 100,
+                                              ModernUI::INFO, ModernUI::BG_DARK);
+
+                    // Draw status text with shadow
                     this->setFontsize(1);
-                    gfx->drawString("DISCONNECTED",
-                                    width / 2,
-                                    height / 2);
+                    this->drawTextWithShadow("DISCONNECTED", width / 2, height / 2, ModernUI::TEXT_PRIMARY);
+
+                    // Draw animated status indicator ring (blue gradient)
+                    this->drawGradientArc(width/2, height/2, 118, 114, 0, 360,
+                                         ModernUI::PRIMARY_BLUE, ModernUI::PRIMARY_TEAL);
 
                     gfx->endWrite();                      // Release SPI bus
                     this->resetScreensaverRunning();
@@ -183,20 +196,25 @@ namespace esphome
                     uint16_t height = this->getHeight();
                     uint16_t width  = this->getWidth();
 
-                    gfx->setTextColor(MAROON);
                     gfx->setTextDatum(middle_center);
-
                     this->setFontByName(this->fontName);
 
                     gfx->startWrite();                      // Secure SPI bus
-                    
-                    this->clear(ORANGE);
-                    
-                    this->setFontsize(2);
 
-                    gfx->drawString("UNKNOWN",
-                                    width / 2,
-                                    height / 2);
+                    // Modern gradient background
+                    this->clear(ModernUI::BG_DARK);
+
+                    // Draw warning gradient circle
+                    this->drawCircularGradient(width/2, height/2, 100,
+                                              ModernUI::WARNING, ModernUI::BG_DARK);
+
+                    // Draw status text with shadow
+                    this->setFontsize(2);
+                    this->drawTextWithShadow("UNKNOWN", width / 2, height / 2, ModernUI::TEXT_PRIMARY);
+
+                    // Draw warning indicator ring (orange/amber gradient)
+                    this->drawGradientArc(width/2, height/2, 118, 114, 0, 360,
+                                         ModernUI::ACCENT_AMBER, ModernUI::ACCENT_CORAL);
 
                     gfx->endWrite();                      // Release SPI bus
                     this->resetScreensaverRunning();
@@ -278,6 +296,117 @@ namespace esphome
 
                 void clear(){
                     this->clear(this->backgroundColor);
+                }
+
+                // Modern UI Helper Functions
+
+                /**
+                 * Interpolate between two colors
+                 */
+                uint16_t interpolateColor(uint16_t color1, uint16_t color2, float ratio) {
+                    // Extract RGB565 components
+                    uint8_t r1 = (color1 >> 11) & 0x1F;
+                    uint8_t g1 = (color1 >> 5) & 0x3F;
+                    uint8_t b1 = color1 & 0x1F;
+
+                    uint8_t r2 = (color2 >> 11) & 0x1F;
+                    uint8_t g2 = (color2 >> 5) & 0x3F;
+                    uint8_t b2 = color2 & 0x1F;
+
+                    // Interpolate
+                    uint8_t r = r1 + (r2 - r1) * ratio;
+                    uint8_t g = g1 + (g2 - g1) * ratio;
+                    uint8_t b = b1 + (b2 - b1) * ratio;
+
+                    // Recombine
+                    return (r << 11) | (g << 5) | b;
+                }
+
+                /**
+                 * Draw a gradient arc (progress bar with gradient)
+                 */
+                void drawGradientArc(int16_t cx, int16_t cy, int16_t r_outer, int16_t r_inner,
+                                    float start_angle, float end_angle,
+                                    uint16_t color_start, uint16_t color_end) {
+                    float angle_range = end_angle - start_angle;
+                    int steps = (int)(angle_range / 2); // Draw every 2 degrees for smoothness
+
+                    for(int i = 0; i < steps; i++) {
+                        float angle1 = start_angle + (angle_range * i / steps);
+                        float angle2 = start_angle + (angle_range * (i + 1) / steps);
+                        float ratio = (float)i / steps;
+
+                        uint16_t color = interpolateColor(color_start, color_end, ratio);
+                        gfx->fillArc(cx, cy, r_outer, r_inner, angle1, angle2, color);
+                    }
+                }
+
+                /**
+                 * Draw arc with glow effect
+                 */
+                void drawGlowArc(int16_t cx, int16_t cy, int16_t r_outer, int16_t r_inner,
+                                float start_angle, float end_angle, uint16_t color) {
+                    // Draw outer glow (wider, dimmer)
+                    uint16_t glowColor = interpolateColor(color, ModernUI::BG_DARK, 0.3);
+                    gfx->fillArc(cx, cy, r_outer + 2, r_outer, start_angle, end_angle, glowColor);
+
+                    // Draw main arc
+                    gfx->fillArc(cx, cy, r_outer, r_inner, start_angle, end_angle, color);
+
+                    // Draw inner highlight
+                    uint16_t highlightColor = interpolateColor(color, WHITE, 0.3);
+                    gfx->fillArc(cx, cy, r_inner + 2, r_inner, start_angle, end_angle, highlightColor);
+                }
+
+                /**
+                 * Draw text with shadow for better readability
+                 */
+                void drawTextWithShadow(const char* text, int16_t x, int16_t y, uint16_t color) {
+                    // Draw shadow (offset by 2px)
+                    gfx->setTextColor(ModernUI::SHADOW);
+                    gfx->drawString(text, x + 2, y + 2);
+
+                    // Draw main text
+                    gfx->setTextColor(color);
+                    gfx->drawString(text, x, y);
+                }
+
+                /**
+                 * Draw a circular gradient background
+                 */
+                void drawCircularGradient(int16_t cx, int16_t cy, int16_t max_radius,
+                                         uint16_t center_color, uint16_t edge_color) {
+                    for(int r = max_radius; r > 0; r -= 2) {
+                        float ratio = (float)(max_radius - r) / max_radius;
+                        uint16_t color = interpolateColor(center_color, edge_color, ratio);
+                        gfx->drawCircle(cx, cy, r, color);
+                    }
+                }
+
+                /**
+                 * Draw modern card-style background
+                 */
+                void drawCard(int16_t x, int16_t y, int16_t w, int16_t h, int16_t radius = 12) {
+                    // Shadow layer
+                    gfx->fillRoundRect(x + 3, y + 3, w, h, radius, ModernUI::SHADOW);
+
+                    // Card background
+                    gfx->fillRoundRect(x, y, w, h, radius, ModernUI::BG_CARD);
+                }
+
+                /**
+                 * Get gradient color for progress (3-color gradient)
+                 */
+                uint16_t getProgressGradientColor(float progress) {
+                    // 0-50%: Blue to Purple
+                    // 50-100%: Purple to Pink
+                    if(progress <= 0.5) {
+                        float ratio = progress * 2.0;
+                        return interpolateColor(ModernUI::PROGRESS_START, ModernUI::PROGRESS_MID, ratio);
+                    } else {
+                        float ratio = (progress - 0.5) * 2.0;
+                        return interpolateColor(ModernUI::PROGRESS_MID, ModernUI::PROGRESS_END, ratio);
+                    }
                 }
         };
     }
