@@ -118,7 +118,7 @@ shys_m5_dial:
   # Display Settings
   screen_off_time: 30000        # Screen turns off after 30 seconds
   screensaver: "clock"          # Options: "off" or "clock" (modern clock design)
-  display_rotate: 2             # Rotation: 0-7 (2 is default)
+  display_rotate: 0             # Rotation: 0-7 (try 0, 2, 4, or 6 if display is upside down)
 
   # Font Settings
   font: "default"               # Font name (see globals.h for available fonts)

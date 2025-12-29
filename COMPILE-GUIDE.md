@@ -157,13 +157,27 @@ shys_m5_dial:
   # Screensaver: "off" or "clock"
   screensaver: "clock"
 
-  # Display rotation (0-7)
-  display_rotate: 2
+  # Display rotation (0-7) - IMPORTANT: Adjust if display is upside down!
+  # 0 = 0° (normal), 2 = 180°, 4 = 90° CW, 6 = 270° CW
+  # Try different values if your display orientation is wrong
+  display_rotate: 0  # Start with 0, adjust as needed
 
   # Font settings
   font: "default"  # See globals.h for available fonts
   font_factor: 1.0  # Font size multiplier
 ```
+
+**Display Rotation Values:**
+- `0` - 0° rotation (normal orientation)
+- `1` - 0° with horizontal mirroring
+- `2` - 180° rotation (upside down)
+- `3` - 180° with mirroring
+- `4` - 90° clockwise
+- `5` - 90° clockwise with mirroring
+- `6` - 270° clockwise (90° counter-clockwise)
+- `7` - 270° clockwise with mirroring
+
+**If your display shows upside down:** Change `display_rotate` to `0` or try `4` or `6` to find the correct orientation for your setup.
 
 ### Modern UI Fonts Available
 
