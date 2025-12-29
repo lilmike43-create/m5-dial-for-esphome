@@ -1,0 +1,332 @@
+# ========================================
+# M5 Dial ESPHome Sample Configuration
+# With Modern UI Redesign
+# ========================================
+
+substitutions:
+  name: "m5-dial"
+  friendly_name: "M5 Dial"
+  # Update these with your WiFi credentials
+  wifi_ssid: !secret wifi_ssid
+  wifi_password: !secret wifi_password
+
+esphome:
+  name: ${name}
+  name_add_mac_suffix: false
+  friendly_name: ${friendly_name}
+  project:
+    name: "m5-dial.esphome"
+    version: "2.0-modern-ui"
+
+  platformio_options:
+    lib_deps:
+      - Wire
+      - EEPROM
+      - ArduinoJson
+      - m5stack/M5Unified@0.1.14
+      - m5stack/M5Dial@1.0.2
+
+# ========================================
+# External Components
+# ========================================
+# Use local component with modern UI
+external_components:
+  - source:
+      type: local
+      path: components
+    components: [shys_m5_dial]
+
+# For using from GitHub (switch to your fork or main repo)
+# external_components:
+#   - source:
+#       type: git
+#       url: https://github.com/your-username/m5-dial-for-esphome/
+#       ref: claude/redesign-modern-ui-nMOGl
+#     components: [shys_m5_dial]
+
+# ========================================
+# ESP32 Configuration
+# ========================================
+esp32:
+  board: esp32-s3-devkitc-1
+  framework:
+    type: arduino
+  flash_size: 8MB
+
+# ========================================
+# Logging
+# ========================================
+logger:
+  level: INFO
+  logs:
+    api: WARN
+    esp32.preferences: WARN
+    LOOP: WARN
+    DISPLAY: WARN
+    TOUCH: WARN
+    HA_API: INFO
+    DEVICE: INFO
+    MEDIAPLAYER: WARN
+
+# ========================================
+# API & OTA
+# ========================================
+api:
+  encryption:
+    key: !secret api_encryption_key
+  homeassistant_states: true
+  homeassistant_services: true
+  custom_services: true
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+# ========================================
+# WiFi Configuration
+# ========================================
+wifi:
+  ssid: ${wifi_ssid}
+  password: ${wifi_password}
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "${friendly_name} Fallback"
+    password: "m5dial1234"
+
+# Optional: Enable captive portal for initial setup
+captive_portal:
+
+# Optional: Enable web server for debugging
+web_server:
+  port: 80
+
+# ========================================
+# Time Component (Required)
+# ========================================
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+    timezone: "America/New_York"  # Change to your timezone
+
+# ========================================
+# M5 Dial Component with Modern UI
+# ========================================
+shys_m5_dial:
+  id: m5_dial
+
+  # Display Settings
+  screen_off_time: 30000        # Screen turns off after 30 seconds
+  screensaver: "clock"          # Options: "off" or "clock" (modern clock design)
+  display_rotate: 2             # Rotation: 0-7 (2 is default)
+
+  # Font Settings
+  font: "default"               # Font name (see globals.h for available fonts)
+  font_factor: 1.0              # Font size multiplier (0.1 - 10.0)
+
+  # Interaction Settings
+  long_press_duration: 1200     # Long press duration in ms
+  rotary_step_width: 10         # Default rotary encoder step size
+  send_value_delay: 1200        # Delay before sending value to HA (ms)
+  send_value_lock: 3000         # Lock time after sending value (ms)
+
+  # Time component reference
+  time_component: homeassistant_time
+
+  # ========================================
+  # Devices Configuration
+  # ========================================
+  devices:
+
+    # ====================================
+    # Lights Configuration
+    # ====================================
+    lights:
+      # RGB Light Example (Modern Color Wheel)
+      - entity: "light.living_room_rgb"
+        name: "Living Room"
+        modes:
+          rgb_mode:
+            enable: true
+            rotary_step_width: 5
+          dimm_mode:
+            enable: true
+            rotary_step_width: 5
+            min_brightness: 1
+            max_brightness: 100
+          white_mode:
+            enable: true
+            rotary_step_width: 50
+            min_kelvin: 2000
+            max_kelvin: 6500
+
+      # Dimmable Light Example (Modern Progress Arc)
+      - entity: "light.bedroom_lamp"
+        name: "Bedroom Lamp"
+        modes:
+          dimm_mode:
+            enable: true
+            rotary_step_width: 10
+            min_brightness: 10
+            max_brightness: 100
+
+      # Tunable White Light Example (Modern Temperature Gradient)
+      - entity: "light.kitchen_ceiling"
+        name: "Kitchen"
+        modes:
+          white_mode:
+            enable: true
+            rotary_step_width: 100
+            min_kelvin: 2700
+            max_kelvin: 6500
+          dimm_mode:
+            enable: true
+
+    # ====================================
+    # Climate/Thermostat Configuration
+    # ====================================
+    climates:
+      - entity: "climate.living_room"
+        name: "Living Room AC"
+        modes:
+          temp_mode:
+            rotary_step_width: 1
+            min_temperature: 16
+            max_temperature: 30
+          fan_mode:
+            rotary_step_width: 1
+            modes:
+              - "auto"
+              - "low"
+              - "medium"
+              - "high"
+
+    # ====================================
+    # Covers/Blinds Configuration
+    # ====================================
+    covers:
+      - entity: "cover.living_room_blinds"
+        name: "LR Blinds"
+        modes:
+          position_mode:
+            rotary_step_width: 5
+
+      - entity: "cover.bedroom_curtains"
+        name: "BR Curtains"
+        modes:
+          position_mode:
+            rotary_step_width: 10
+
+    # ====================================
+    # Switches Configuration
+    # ====================================
+    switches:
+      - entity: "switch.coffee_maker"
+        name: "Coffee"
+
+      - entity: "switch.desk_lamp"
+        name: "Desk Lamp"
+
+    # ====================================
+    # Fans Configuration
+    # ====================================
+    fans:
+      - entity: "fan.bedroom_fan"
+        name: "Bedroom Fan"
+        modes:
+          speed_mode:
+            rotary_step_width: 10
+            changeable_direction: true
+
+      - entity: "fan.living_room_fan"
+        name: "LR Fan"
+        modes:
+          speed_mode:
+            rotary_step_width: 5
+            changeable_direction: false
+
+    # ====================================
+    # Media Players Configuration
+    # ====================================
+    media_player:
+      - entity: "media_player.living_room_speaker"
+        name: "Living Room"
+        modes:
+          play_mode:
+            rotary_step_width: 5
+          source_mode:
+            rotary_step_width: 1
+            sources:
+              - name: "Radio 1"
+                content_id: "http://stream.radio1.example/live"
+                content_type: "music"
+              - name: "Spotify"
+                content_id: "spotify:playlist:abc123"
+                content_type: "music"
+              - name: "Relaxing Sounds"
+                content_id: "http://relaxing.example/stream"
+                content_type: "music"
+
+    # ====================================
+    # Locks Configuration
+    # ====================================
+    lock:
+      - entity: "lock.front_door"
+        name: "Front Door"
+        modes:
+          lock_mode:
+            rotary_step_width: 1
+            open_on_button: true
+
+    # ====================================
+    # Number Inputs Configuration
+    # ====================================
+    number:
+      - entity: "number.irrigation_duration"
+        name: "Water Time"
+        modes:
+          value_mode:
+            rotary_step_width: 5
+            unit: "min"
+
+      - entity: "number.heating_setpoint"
+        name: "Heat Target"
+        modes:
+          value_mode:
+            rotary_step_width: 1
+            unit: "°C"
+
+    # ====================================
+    # Timers Configuration
+    # ====================================
+    timer:
+      - entity: "timer.cooking_timer"
+        name: "Cook Timer"
+        modes:
+          timer_mode:
+            rotary_step_width: 60  # 1 minute increments
+
+# ========================================
+# Additional Sensors (Optional)
+# ========================================
+sensor:
+  - platform: wifi_signal
+    name: "${friendly_name} WiFi Signal"
+    update_interval: 60s
+
+  - platform: uptime
+    name: "${friendly_name} Uptime"
+
+binary_sensor:
+  - platform: status
+    name: "${friendly_name} Status"
+
+# ========================================
+# Buttons for Control (Optional)
+# ========================================
+button:
+  - platform: restart
+    name: "${friendly_name} Restart"
+
+  - platform: safe_mode
+    name: "${friendly_name} Safe Mode"
