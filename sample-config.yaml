@@ -29,11 +29,11 @@ esphome:
 # ========================================
 # External Components
 # ========================================
-# Use local component with modern UI
+# IMPORTANT: Use absolute path to the components directory
 external_components:
   - source:
       type: local
-      path: components
+      path: /home/user/m5-dial-for-esphome/components
     components: [shys_m5_dial]
 
 # For using from GitHub (switch to your fork or main repo)
