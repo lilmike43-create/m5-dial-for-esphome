@@ -107,17 +107,16 @@ namespace esphome
 
                     // Only update text when value changes or full redraw
                     if(fullRedraw || valueChanged) {
-                        // Value text with opaque background to prevent ghosting
-                        gfx->fillRect(width/2 - 65, height/2 - 88, 130, 36, ModernUI::BG_ELEVATED);
+                        // Value text with opaque background (atomic operation - no strobe!)
                         display.setFontsize(2.2);
                         String valueText = use_custom_value ? custom_value.c_str() : (String(currentValue) + this->unit.c_str()).c_str();
-                        display.drawTextWithShadow(valueText.c_str(), width / 2, height / 2 - 70, ModernUI::TEXT_PRIMARY);
+                        gfx->setTextColor(ModernUI::TEXT_PRIMARY, ModernUI::BG_ELEVATED);  // Opaque background
+                        gfx->drawString(valueText.c_str(), width / 2, height / 2 - 70);
 
-                        // Device name at bottom with opaque background
-                        gfx->fillRect(width/2 - 65, height/2 + 76, 130, 18, ModernUI::BG_DARK);
+                        // Device name at bottom with opaque background (atomic operation)
                         display.setFontsize(1.0);
                         uint16_t nameColor = display.getProgressGradientColor(progress);
-                        gfx->setTextColor(nameColor);
+                        gfx->setTextColor(nameColor, ModernUI::BG_DARK);  // Opaque background
                         gfx->drawString(this->device.getName().c_str(), width / 2, height / 2 + 85);
 
                         // Progress indicator dots with clear background
