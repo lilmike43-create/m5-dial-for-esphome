@@ -65,10 +65,10 @@ namespace esphome
                         display.setFontsize(1.1);
                         gfx->setTextColor(ModernUI::TEXT_SECONDARY);
                         gfx->drawString(this->label.c_str(), width / 2, height / 2 - 42);
-                    } else {
-                        // Quick refresh - only update dynamic elements
+                    } else if(valueChanged) {
+                        // Only clear text areas when value actually changes
                         // Clear text area for value
-                        gfx->fillRect(width/2 - 60, height/2 - 85, 120, 20, ModernUI::BG_DARK);
+                        gfx->fillRect(width/2 - 60, height/2 - 85, 120, 20, ModernUI::BG_ELEVATED);
                         // Clear device name area
                         gfx->fillRect(width/2 - 60, height/2 + 75, 120, 15, ModernUI::BG_DARK);
                         // Clear dots area
@@ -112,29 +112,32 @@ namespace esphome
                                     150, 390, ModernUI::PROGRESS_BG);
                     }
 
-                    // Value text (always update)
-                    display.setFontsize(2.2);
-                    String valueText = use_custom_value ? custom_value.c_str() : (String(getValue()) + this->unit.c_str()).c_str();
-                    display.drawTextWithShadow(valueText.c_str(), width / 2, height / 2 - 70, ModernUI::TEXT_PRIMARY);
+                    // Only update text when value changes or full redraw
+                    if(fullRedraw || valueChanged) {
+                        // Value text
+                        display.setFontsize(2.2);
+                        String valueText = use_custom_value ? custom_value.c_str() : (String(currentValue) + this->unit.c_str()).c_str();
+                        display.drawTextWithShadow(valueText.c_str(), width / 2, height / 2 - 70, ModernUI::TEXT_PRIMARY);
 
-                    // Device name at bottom (always update for color change)
-                    display.setFontsize(1.0);
-                    uint16_t nameColor = display.getProgressGradientColor(progress);
-                    gfx->setTextColor(nameColor);
-                    gfx->drawString(this->device.getName().c_str(), width / 2, height / 2 + 85);
+                        // Device name at bottom
+                        display.setFontsize(1.0);
+                        uint16_t nameColor = display.getProgressGradientColor(progress);
+                        gfx->setTextColor(nameColor);
+                        gfx->drawString(this->device.getName().c_str(), width / 2, height / 2 + 85);
 
-                    // Progress indicator dots (always update)
-                    int dotY = height / 2 + 105;
-                    int dotSpacing = 8;
-                    int numDots = 5;
-                    int startX = width / 2 - (numDots - 1) * dotSpacing / 2;
+                        // Progress indicator dots
+                        int dotY = height / 2 + 105;
+                        int dotSpacing = 8;
+                        int numDots = 5;
+                        int startX = width / 2 - (numDots - 1) * dotSpacing / 2;
 
-                    for(int i = 0; i < numDots; i++){
-                        float dotProgress = (float)i / (numDots - 1);
-                        uint16_t dotColor = (progress >= dotProgress) ?
-                            display.getProgressGradientColor(dotProgress) :
-                            ModernUI::PROGRESS_BG;
-                        gfx->fillCircle(startX + i * dotSpacing, dotY, 2, dotColor);
+                        for(int i = 0; i < numDots; i++){
+                            float dotProgress = (float)i / (numDots - 1);
+                            uint16_t dotColor = (progress >= dotProgress) ?
+                                display.getProgressGradientColor(dotProgress) :
+                                ModernUI::PROGRESS_BG;
+                            gfx->fillCircle(startX + i * dotSpacing, dotY, 2, dotColor);
+                        }
                     }
 
                     gfx->endWrite();                      // Release SPI bus
