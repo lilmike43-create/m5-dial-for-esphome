@@ -423,7 +423,11 @@ namespace esphome
         m5DialDisplay->resetLastEventTimer();
         M5Dial.Speaker.tone(5000, 20);
 
-        if(m5DialDisplay->isDisplayOn() && !m5DialDisplay->isScreensaverRunning()){
+        // Wake up display if it's off
+        if(!m5DialDisplay->isDisplayOn()){
+          M5Dial.Display.setBrightness(255);
+          ESP_LOGI("DEVICE", "Display woken by rotary left");
+        } else if(!m5DialDisplay->isScreensaverRunning()){
           devices[currentDevice]->doOnRotary(*m5DialDisplay, ROTARY_LEFT);
         }
 
@@ -437,7 +441,11 @@ namespace esphome
         m5DialDisplay->resetLastEventTimer();
         M5Dial.Speaker.tone(5000, 20);
 
-        if(m5DialDisplay->isDisplayOn() && !m5DialDisplay->isScreensaverRunning()){
+        // Wake up display if it's off
+        if(!m5DialDisplay->isDisplayOn()){
+          M5Dial.Display.setBrightness(255);
+          ESP_LOGI("DEVICE", "Display woken by rotary right");
+        } else if(!m5DialDisplay->isScreensaverRunning()){
           devices[currentDevice]->doOnRotary(*m5DialDisplay, ROTARY_RIGHT);
         }
 
