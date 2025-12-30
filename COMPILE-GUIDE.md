@@ -12,6 +12,9 @@ The redesigned UI includes:
 - **Improved typography** - Better text hierarchy and readability
 - **Modern clock screensaver** - Elegant minimalist design with colored hands
 - **Beautiful color wheels** - Multi-ring depth effects for RGB and temperature controls
+- **Comprehensive settings menu** - On-device customization with theme selection
+- **4 Built-in themes** - Modern Blue, Warm Sunset, Cool Mint, Dark Purple
+- **Live adjustments** - Change brightness, rotation, timeout without reflashing
 
 ---
 
@@ -382,6 +385,56 @@ esphome run my-m5-dial.yaml
 
 ---
 
+## ⚙️ Using the Settings Menu
+
+### Accessing Settings
+
+**Long press the button** to enter/exit settings mode. A high-pitched beep confirms entry, low-pitched confirms exit.
+
+### Navigation
+
+- **Rotate dial**: Navigate menu items or adjust values
+- **Short press button**: Select item or toggle edit mode
+- **Long press button**: Exit settings (from main menu)
+
+### Settings Categories
+
+#### 1. Display Settings
+- **Timeout**: Screen off time (5-300 seconds)
+- **Brightness**: Display brightness (10-255)
+- **Rotation**: Display orientation (0-7)
+- **Font Size**: Font scale factor (0.5-3.0)
+- **Screensaver**: Enable/disable clock screensaver
+
+#### 2. Themes
+Choose from 4 beautiful themes:
+- **Modern Blue** (Default): Blue→Purple→Pink gradients
+- **Warm Sunset**: Orange→Red→Yellow warm tones
+- **Cool Mint**: Cyan→Green→Aqua cool tones
+- **Dark Purple**: Purple→Magenta→Pink dark palette
+
+Each theme includes:
+- Custom color palette
+- Matching backgrounds
+- Coordinated text colors
+- Preview circles showing colors
+
+#### 3. Future Categories
+- **Devices**: Add/remove/modify devices (coming soon)
+- **Time**: Time adjustment interface (coming soon)
+- **Advanced**: Additional customization (coming soon)
+
+### Editing Values
+
+1. Navigate to a setting (e.g., "Brightness")
+2. Press button to enter edit mode (item highlights with accent color)
+3. Rotate dial to adjust value (changes are live)
+4. Press button again to save and exit edit mode
+
+Settings are automatically saved to EEPROM and persist across reboots!
+
+---
+
 ## 🎉 Enjoy Your Modern M5 Dial!
 
 Your M5 Dial now features a beautiful, modern UI with:
@@ -389,6 +442,11 @@ Your M5 Dial now features a beautiful, modern UI with:
 - 🎨 Professional color wheels with depth
 - 🌡️ Elegant temperature visualizations
 - ⏰ Beautiful minimalist clock screensaver
+- ⚙️ Comprehensive on-device settings menu
+- 🎨 4 beautiful themes to choose from
+- 🔧 Live customization without reflashing
 - 🎯 Improved readability and user experience
+- ⚡ Enhanced rotary encoder responsiveness
+- 🖥️ Smooth, glitch-free display updates
 
 Happy controlling! 🚀
