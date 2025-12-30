@@ -17,7 +17,7 @@ namespace esphome
                 // Performance optimization
                 int lastDrawnValue = -1;
                 unsigned long lastValueChange = 0;
-                const unsigned long SETTLE_DELAY = 300;  // Wait 300ms after change before drawing gradients
+                const unsigned long SETTLE_DELAY = 500;  // Wait 500ms after change before drawing gradients
 
 
                 void showPercentageMenu(M5DialDisplay& display, bool fullRedraw = true){
@@ -181,11 +181,11 @@ namespace esphome
                     showPercentageMenu(display, init);  // Full redraw only on init
                 }
 
-                bool isDisplayRefreshNeeded() override {
-                    // Request refresh when transitioning from fast to beautiful mode
-                    unsigned long timeSinceChange = esphome::millis() - lastValueChange;
-                    return (timeSinceChange > SETTLE_DELAY && timeSinceChange < SETTLE_DELAY + 200);
-                }
+                // Disable automatic transition refresh to eliminate potential flicker source
+                // bool isDisplayRefreshNeeded() override {
+                //     unsigned long timeSinceChange = esphome::millis() - lastValueChange;
+                //     return (timeSinceChange > SETTLE_DELAY && timeSinceChange < SETTLE_DELAY + 200);
+                // }
                 
                 bool onTouch(M5DialDisplay& display, uint16_t x, uint16_t y) override {
                     return this->defaultOnTouch(display, x, y);        
