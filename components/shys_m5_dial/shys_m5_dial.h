@@ -428,7 +428,6 @@ namespace esphome
       */
       void turnRotaryLeft(){
         m5DialDisplay->resetLastEventTimer();
-        M5Dial.Speaker.tone(5000, 20);
 
         // Wake up display if it's off
         if(!m5DialDisplay->isDisplayOn()){
@@ -445,6 +444,8 @@ namespace esphome
           }
         }
 
+        // Beep AFTER display update to avoid interference
+        M5Dial.Speaker.tone(5000, 20);
         lastRotaryEvent = esphome::millis();
       }
 
@@ -453,7 +454,6 @@ namespace esphome
       */
       void turnRotaryRight(){
         m5DialDisplay->resetLastEventTimer();
-        M5Dial.Speaker.tone(5000, 20);
 
         // Wake up display if it's off
         if(!m5DialDisplay->isDisplayOn()){
@@ -470,6 +470,8 @@ namespace esphome
           }
         }
 
+        // Beep AFTER display update to avoid interference
+        M5Dial.Speaker.tone(5000, 20);
         lastRotaryEvent = esphome::millis();
       }
 
