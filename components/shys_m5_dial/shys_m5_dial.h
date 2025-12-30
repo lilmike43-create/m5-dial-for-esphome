@@ -444,8 +444,8 @@ namespace esphome
           }
         }
 
-        // Beep AFTER display update to avoid interference
-        M5Dial.Speaker.tone(5000, 20);
+        // Beep disabled during rotation to prevent display interference
+        // M5Dial.Speaker.tone(5000, 20);
         lastRotaryEvent = esphome::millis();
       }
 
@@ -470,8 +470,8 @@ namespace esphome
           }
         }
 
-        // Beep AFTER display update to avoid interference
-        M5Dial.Speaker.tone(5000, 20);
+        // Beep disabled during rotation to prevent display interference
+        // M5Dial.Speaker.tone(5000, 20);
         lastRotaryEvent = esphome::millis();
       }
 
