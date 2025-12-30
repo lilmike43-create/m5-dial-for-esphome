@@ -14,6 +14,11 @@ namespace esphome
                 bool use_custom_value = false;
                 std::string custom_value = "";
 
+                // Performance optimization
+                int lastDrawnValue = -1;
+                unsigned long lastValueChange = 0;
+                const unsigned long SETTLE_DELAY = 300;  // Wait 300ms after change before drawing gradients
+
 
                 void showPercentageMenu(M5DialDisplay& display, bool fullRedraw = true){
                     LovyanGFX* gfx = display.getGfx();
@@ -23,10 +28,22 @@ namespace esphome
 
                     gfx->setTextDatum(middle_center);
 
+                    // Track value changes for smart rendering
+                    int currentValue = getValue();
+                    bool valueChanged = (currentValue != lastDrawnValue);
+                    if(valueChanged) {
+                        lastValueChange = esphome::millis();
+                        lastDrawnValue = currentValue;
+                    }
+
+                    // Determine if we should use fast or beautiful rendering
+                    bool isSettled = (esphome::millis() - lastValueChange) > SETTLE_DELAY;
+                    bool needsArcRedraw = fullRedraw || valueChanged;
+
                     gfx->startWrite();                      // Secure SPI bus
 
                     // Calculate progress for arc
-                    float progress = (float)(getValue() - this->getMinValue()) / (this->getMaxValue() - this->getMinValue());
+                    float progress = (float)(currentValue - this->getMinValue()) / (this->getMaxValue() - this->getMinValue());
                     float valOnArc = (getMaxValue()==0?240:(progress * 240)) + 150;
 
                     if(fullRedraw) {
@@ -58,28 +75,37 @@ namespace esphome
                         gfx->fillRect(width/2 - 25, height/2 + 100, 50, 10, ModernUI::BG_DARK);
                     }
 
-                    // Draw arc (always - but optimized)
-                    if(this->isBarActive()){
+                    // Draw arc - only if needed and optimized based on state
+                    if(this->isBarActive() && needsArcRedraw){
                         // Background arc (inactive portion)
                         gfx->fillArc(width / 2, height / 2,
                                     ModernUI::ARC_OUTER_RADIUS, ModernUI::ARC_INNER_RADIUS,
                                     150, 390, ModernUI::PROGRESS_BG);
 
-                        // Draw modern gradient progress arc
-                        uint16_t gradientEnd = display.getProgressGradientColor(progress);
-                        display.drawGradientArc(width / 2, height / 2,
-                                              ModernUI::ARC_OUTER_RADIUS,
-                                              ModernUI::ARC_INNER_RADIUS,
-                                              150, valOnArc,
-                                              ModernUI::PROGRESS_START, gradientEnd);
+                        if(isSettled) {
+                            // Beautiful mode: Use gradients when value has settled
+                            uint16_t gradientEnd = display.getProgressGradientColor(progress);
+                            display.drawGradientArc(width / 2, height / 2,
+                                                  ModernUI::ARC_OUTER_RADIUS,
+                                                  ModernUI::ARC_INNER_RADIUS,
+                                                  150, valOnArc,
+                                                  ModernUI::PROGRESS_START, gradientEnd);
 
-                        // Add subtle glow to active portion
-                        uint16_t glowColor = display.interpolateColor(gradientEnd, WHITE, 0.3);
-                        gfx->fillArc(width / 2, height / 2,
-                                    ModernUI::ARC_OUTER_RADIUS + 2,
-                                    ModernUI::ARC_OUTER_RADIUS,
-                                    150, valOnArc, glowColor);
-                    } else {
+                            // Add subtle glow
+                            uint16_t glowColor = display.interpolateColor(gradientEnd, WHITE, 0.3);
+                            gfx->fillArc(width / 2, height / 2,
+                                        ModernUI::ARC_OUTER_RADIUS + 2,
+                                        ModernUI::ARC_OUTER_RADIUS,
+                                        150, valOnArc, glowColor);
+                        } else {
+                            // Fast mode: Use solid color during rotation for smooth updates
+                            uint16_t fastColor = display.getProgressGradientColor(progress);
+                            gfx->fillArc(width / 2, height / 2,
+                                        ModernUI::ARC_OUTER_RADIUS,
+                                        ModernUI::ARC_INNER_RADIUS,
+                                        150, valOnArc, fastColor);
+                        }
+                    } else if(!this->isBarActive()) {
                         gfx->fillArc(width / 2, height / 2,
                                     ModernUI::ARC_OUTER_RADIUS,
                                     ModernUI::ARC_INNER_RADIUS,
@@ -154,6 +180,12 @@ namespace esphome
                 void refreshDisplay(M5DialDisplay& display, bool init) override {
                     ESP_LOGD("DISPLAY", "refresh Display: Percentage-Modus");
                     showPercentageMenu(display, init);  // Full redraw only on init
+                }
+
+                bool isDisplayRefreshNeeded() override {
+                    // Request refresh when transitioning from fast to beautiful mode
+                    unsigned long timeSinceChange = esphome::millis() - lastValueChange;
+                    return (timeSinceChange > SETTLE_DELAY && timeSinceChange < SETTLE_DELAY + 200);
                 }
                 
                 bool onTouch(M5DialDisplay& display, uint16_t x, uint16_t y) override {

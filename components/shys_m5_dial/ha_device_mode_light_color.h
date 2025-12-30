@@ -8,6 +8,10 @@ namespace esphome
     {
         class HaDeviceModeLightColor: public esphome::shys_m5_dial::HaDeviceMode {
             protected:
+                // Performance optimization
+                int lastDrawnValue = -1;
+                unsigned long lastValueChange = 0;
+                const unsigned long SETTLE_DELAY = 200;  // Shorter delay for color changes
                 void sendValueToHomeAssistant(int value) override {
                     ESP_LOGI("LIGHT_COLOR", "Sending color value %i to HA for %s", value, this->device.getEntityId().c_str());
                     haApi.turnLightOn(this->device.getEntityId(), -1, value);
@@ -83,6 +87,19 @@ namespace esphome
                     LovyanGFX* gfx = display.getGfx();
 
                     int currentValue = getValue();
+
+                    // Track value changes for smart rendering
+                    bool valueChanged = (currentValue != lastDrawnValue);
+                    if(valueChanged) {
+                        lastValueChange = esphome::millis();
+                        lastDrawnValue = currentValue;
+                    }
+
+                    // Skip redraw if value hasn't changed
+                    if(!valueChanged) {
+                        return;
+                    }
+
                     uint32_t currentColor = getColorByDegree(currentValue);
                     uint32_t complementary_color = getComplementaryByDegree(currentValue);
 

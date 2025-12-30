@@ -30,7 +30,7 @@ namespace esphome
       int timeToScreenOff = 30000;
       int longPressMs = 1200;
       int rotaryStepWidth = 10;
-      uint16_t displayRefeshPause = 100;  // Reduced from 700ms to 100ms for smoother updates
+      uint16_t displayRefeshPause = 50;  // Ultra-fast refresh for smooth rotation
 
       int apiSendDelay = 1000; // Verzögerung nach Wert-Änderung (um nicht jeden Wert beim drehen des Rades zu senden)
       int apiSendLock = 3000;  // Wartezeit zwischen einzelnden API-Aufrufen
