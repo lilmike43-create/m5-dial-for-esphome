@@ -65,15 +65,8 @@ namespace esphome
                         display.setFontsize(1.1);
                         gfx->setTextColor(ModernUI::TEXT_SECONDARY);
                         gfx->drawString(this->label.c_str(), width / 2, height / 2 - 42);
-                    } else if(valueChanged) {
-                        // Only clear text areas when value actually changes
-                        // Clear text area for value
-                        gfx->fillRect(width/2 - 60, height/2 - 85, 120, 20, ModernUI::BG_ELEVATED);
-                        // Clear device name area
-                        gfx->fillRect(width/2 - 60, height/2 + 75, 120, 15, ModernUI::BG_DARK);
-                        // Clear dots area
-                        gfx->fillRect(width/2 - 25, height/2 + 100, 50, 10, ModernUI::BG_DARK);
                     }
+                    // No clearing during refresh - just overdraw text
 
                     // Draw arc - only if needed and optimized based on state
                     if(this->isBarActive() && needsArcRedraw){
@@ -114,23 +107,26 @@ namespace esphome
 
                     // Only update text when value changes or full redraw
                     if(fullRedraw || valueChanged) {
-                        // Value text
+                        // Value text with opaque background to prevent ghosting
+                        gfx->fillRect(width/2 - 65, height/2 - 88, 130, 36, ModernUI::BG_ELEVATED);
                         display.setFontsize(2.2);
                         String valueText = use_custom_value ? custom_value.c_str() : (String(currentValue) + this->unit.c_str()).c_str();
                         display.drawTextWithShadow(valueText.c_str(), width / 2, height / 2 - 70, ModernUI::TEXT_PRIMARY);
 
-                        // Device name at bottom
+                        // Device name at bottom with opaque background
+                        gfx->fillRect(width/2 - 65, height/2 + 76, 130, 18, ModernUI::BG_DARK);
                         display.setFontsize(1.0);
                         uint16_t nameColor = display.getProgressGradientColor(progress);
                         gfx->setTextColor(nameColor);
                         gfx->drawString(this->device.getName().c_str(), width / 2, height / 2 + 85);
 
-                        // Progress indicator dots
+                        // Progress indicator dots with clear background
                         int dotY = height / 2 + 105;
                         int dotSpacing = 8;
                         int numDots = 5;
                         int startX = width / 2 - (numDots - 1) * dotSpacing / 2;
 
+                        gfx->fillRect(width/2 - 28, height/2 + 99, 56, 12, ModernUI::BG_DARK);
                         for(int i = 0; i < numDots; i++){
                             float dotProgress = (float)i / (numDots - 1);
                             uint16_t dotColor = (progress >= dotProgress) ?
