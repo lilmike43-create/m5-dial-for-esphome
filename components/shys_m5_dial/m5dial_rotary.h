@@ -17,6 +17,12 @@ namespace esphome
                 long oldPosition = 0;
                 bool longPress = false;
 
+                // Debouncing and smoothing
+                unsigned long lastRotaryEvent = 0;
+                const unsigned long ROTARY_DEBOUNCE_MS = 50;  // Minimum time between events
+                const int ROTARY_THRESHOLD = 2;                // Encoder counts needed to trigger
+                long accumulatedDelta = 0;                     // Accumulated encoder changes
+
             public:
                 void on_rotary_right(std::function<void(void)> callback){
                     ESP_LOGD("DEVICE", "register on_rotary_right Callback");
@@ -47,17 +53,36 @@ namespace esphome
                 }
 
                /**
-                * 
+                * Enhanced rotary handling with debouncing and threshold
                 */
                 void handleRotary(){
+                    unsigned long currentMillis = millis();
                     long newPosition = M5Dial.Encoder.read();
+
                     if (newPosition != this->oldPosition) {
-                        if(newPosition > this->oldPosition){
-                            ESP_LOGI("DEVICE", "Rotary right");
-                            this->rotary_right_action();
-                        } else {
-                            ESP_LOGI("DEVICE", "Rotary left");
-                            this->rotary_left_action();
+                        // Calculate the change
+                        long delta = newPosition - this->oldPosition;
+                        accumulatedDelta += delta;
+
+                        // Check if enough time has passed (debouncing)
+                        bool timeElapsed = (currentMillis - lastRotaryEvent) >= ROTARY_DEBOUNCE_MS;
+
+                        // Check if accumulated change exceeds threshold
+                        bool thresholdMet = abs(accumulatedDelta) >= ROTARY_THRESHOLD;
+
+                        // Only trigger event if both conditions are met
+                        if (timeElapsed && thresholdMet) {
+                            if(accumulatedDelta > 0){
+                                ESP_LOGI("DEVICE", "Rotary right (delta: %ld)", accumulatedDelta);
+                                this->rotary_right_action();
+                            } else {
+                                ESP_LOGI("DEVICE", "Rotary left (delta: %ld)", accumulatedDelta);
+                                this->rotary_left_action();
+                            }
+
+                            // Reset for next event
+                            accumulatedDelta = 0;
+                            lastRotaryEvent = currentMillis;
                         }
 
                         this->oldPosition = newPosition;

@@ -29,7 +29,7 @@ namespace esphome
       int timeToScreenOff = 30000;
       int longPressMs = 1200;
       int rotaryStepWidth = 10;
-      uint16_t displayRefeshPause = 700;
+      uint16_t displayRefeshPause = 100;  // Reduced from 700ms to 100ms for smoother updates
 
       int apiSendDelay = 1000; // Verzögerung nach Wert-Änderung (um nicht jeden Wert beim drehen des Rades zu senden)
       int apiSendLock = 3000;  // Wartezeit zwischen einzelnden API-Aufrufen
@@ -87,6 +87,7 @@ namespace esphome
             lastDisplayDevice  = currentDevice;
             lastModeIndex      = devices[currentDevice]->getCurrentModeIndex();
             lastDisplayValue   = getCurrentValue();
+            lastDisplayRefresh = esphome::millis();  // Update timestamp to enable throttling
         }
       }
 
