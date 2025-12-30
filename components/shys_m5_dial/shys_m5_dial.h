@@ -14,6 +14,7 @@
 #include "ha_device_lock.h"
 #include "ha_device_number.h"
 #include "ha_device_timer.h"
+#include "settings_menu.h"
 
 #include "M5Dial.h"
 
@@ -59,8 +60,11 @@ namespace esphome
       M5DialRotary* m5DialRotary = new M5DialRotary();
       M5DialTouch* m5DialTouch = new M5DialTouch();
       M5DialEEPROM* m5DialEEPROM = new M5DialEEPROM();
+      SettingsMenu* settingsMenu = nullptr;
 
       esphome::time::RealTimeClock* local_time;
+
+      bool inSettingsMode = false;
 
       bool startsWith(const char *pre, const char *str){
           return strncmp(pre, str, strlen(pre)) == 0;
@@ -327,6 +331,9 @@ namespace esphome
         m5DialDisplay->on_display_refresh(std::bind(&esphome::shys_m5_dial::ShysM5Dial::refreshDisplay, this, _1));
         m5DialDisplay->init();
 
+        ESP_LOGI("DEVICE", "Initialize Settings Menu...");
+        settingsMenu = new SettingsMenu(m5DialEEPROM);
+
         this->registerServices();
       }
 
@@ -428,7 +435,14 @@ namespace esphome
           M5Dial.Display.setBrightness(255);
           ESP_LOGI("DEVICE", "Display woken by rotary left");
         } else if(!m5DialDisplay->isScreensaverRunning()){
-          devices[currentDevice]->doOnRotary(*m5DialDisplay, ROTARY_LEFT);
+          if(inSettingsMode){
+            // Handle settings navigation
+            settingsMenu->handleRotary(ROTARY_LEFT);
+            settingsMenu->render(*m5DialDisplay);
+          } else {
+            // Normal device control
+            devices[currentDevice]->doOnRotary(*m5DialDisplay, ROTARY_LEFT);
+          }
         }
 
         lastRotaryEvent = esphome::millis();
@@ -446,7 +460,14 @@ namespace esphome
           M5Dial.Display.setBrightness(255);
           ESP_LOGI("DEVICE", "Display woken by rotary right");
         } else if(!m5DialDisplay->isScreensaverRunning()){
-          devices[currentDevice]->doOnRotary(*m5DialDisplay, ROTARY_RIGHT);
+          if(inSettingsMode){
+            // Handle settings navigation
+            settingsMenu->handleRotary(ROTARY_RIGHT);
+            settingsMenu->render(*m5DialDisplay);
+          } else {
+            // Normal device control
+            devices[currentDevice]->doOnRotary(*m5DialDisplay, ROTARY_RIGHT);
+          }
         }
 
         lastRotaryEvent = esphome::millis();
@@ -458,9 +479,21 @@ namespace esphome
       void shortButtonPress(){
         m5DialDisplay->resetLastEventTimer();
         M5Dial.Speaker.tone(4000, 20);
-        
+
         if(m5DialDisplay->isDisplayOn() && !m5DialDisplay->isScreensaverRunning()){
-          devices[currentDevice]->doOnButton(*m5DialDisplay, BUTTON_SHORT);
+          if(inSettingsMode){
+            // Handle settings button press
+            bool continueSettings = settingsMenu->handleButton();
+            if(!continueSettings){
+              // Exit settings was selected
+              inSettingsMode = false;
+              lastDisplayDevice = -1;  // Force refresh
+            }
+            settingsMenu->render(*m5DialDisplay);
+          } else {
+            // Normal device button press
+            devices[currentDevice]->doOnButton(*m5DialDisplay, BUTTON_SHORT);
+          }
         }
       }
 
@@ -470,6 +503,20 @@ namespace esphome
       void longButtonPress(){
         if(m5DialDisplay->isDisplayOn() && !m5DialDisplay->isScreensaverRunning()){
           m5DialDisplay->resetLastEventTimer();
+
+          // Toggle settings mode
+          inSettingsMode = !inSettingsMode;
+
+          if(inSettingsMode){
+            ESP_LOGI("DEVICE", "Entering settings mode");
+            M5Dial.Speaker.tone(6000, 100);
+            settingsMenu->render(*m5DialDisplay);
+          } else {
+            ESP_LOGI("DEVICE", "Exiting settings mode");
+            M5Dial.Speaker.tone(4000, 100);
+            // Force refresh of device display
+            lastDisplayDevice = -1;
+          }
         }
       }
 
